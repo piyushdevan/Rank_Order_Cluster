@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rank Order Clustering</title>
   <!-- SheetJS library for Excel processing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -26,7 +26,7 @@
       margin: 0 auto;
       background: white;
       padding: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
     section {
       margin: 20px 0;
@@ -83,6 +83,15 @@
     th {
       background: #f2f2f2;
     }
+    /* Remove spinner arrows from number inputs */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
   </style>
 </head>
 <body>
@@ -90,76 +99,88 @@
     <h1>Rank Order Clustering</h1>
   </header>
   <div class="container">
-    <!-- Excel File Input Section (placed at top) -->
+    <!-- Excel File Input Section (at the top) -->
     <section id="excelSection">
       <h2>Excel File Input</h2>
-      <input type="file" id="excelInput" accept=".xlsx, .xls">
+      <input type="file" id="excelInput" accept=".xlsx, .xls" />
       <div class="inline-label">
-        <input type="checkbox" id="excelHasHeaders">
+        <input type="checkbox" id="excelHasHeaders" />
         <label for="excelHasHeaders" style="margin: 0;">Excel file contains headers</label>
       </div>
       <button onclick="processExcel()">Process Excel File</button>
       <div id="excelResult">
         <h3>Clustered Matrix (Excel):</h3>
       </div>
-      <button id="downloadBtn" onclick="downloadExcel()" style="display:none;">Download Clustered Matrix as Excel</button>
+      <button id="downloadBtn" onclick="downloadExcel()" style="display: none;">Download Clustered Matrix as Excel</button>
     </section>
-    
+
     <!-- Manual Matrix Entry Section -->
     <section id="manualSection">
       <h2>Manual Matrix Entry</h2>
-      <label for="size">Matrix Size (n x n):</label>
-      <input type="number" id="size" min="1" value="5">
+      <label for="rows">Number of Rows:</label>
+      <input type="number" id="rows" min="1" value="5" />
+      <label for="cols">Number of Columns:</label>
+      <input type="number" id="cols" min="1" value="5" />
       <button onclick="generateMatrix()">Generate Matrix</button>
       <div id="matrixContainer"></div>
       <button onclick="performROC()">Perform ROC</button>
     </section>
-    
+
     <!-- Manual Result Display -->
     <section id="manualResultSection">
       <h2>Clustered Matrix (Manual):</h2>
       <div id="resultContainer"></div>
     </section>
   </div>
-  
+
   <script>
     // --- Manual Mode ---
     window.onload = generateMatrix;
-    
+
     function generateMatrix() {
-      const size = parseInt(document.getElementById('size').value);
-      const container = document.getElementById('matrixContainer');
-      container.innerHTML = '';
-      const table = document.createElement('table');
-      
+      const rows = parseInt(document.getElementById("rows").value);
+      const cols = parseInt(document.getElementById("cols").value);
+      const container = document.getElementById("matrixContainer");
+      container.innerHTML = "";
+      const table = document.createElement("table");
+
       // Create header row for column names
-      const headerRow = document.createElement('tr');
-      const emptyTh = document.createElement('th');
+      const headerRow = document.createElement("tr");
+      const emptyTh = document.createElement("th");
       headerRow.appendChild(emptyTh);
-      for (let j = 0; j < size; j++) {
-        const th = document.createElement('th');
-        const colInput = document.createElement('input');
-        colInput.type = 'text';
-        colInput.value = 'C' + (j + 1);
+      for (let j = 0; j < cols; j++) {
+        const th = document.createElement("th");
+        const colInput = document.createElement("input");
+        colInput.type = "text";
+        colInput.value = "C" + (j + 1);
         th.appendChild(colInput);
         headerRow.appendChild(th);
       }
       table.appendChild(headerRow);
-      
-      // Create rows with row names and numeric cells
-      for (let i = 0; i < size; i++) {
-        const row = document.createElement('tr');
-        const rowTh = document.createElement('th');
-        const rowInput = document.createElement('input');
-        rowInput.type = 'text';
-        rowInput.value = 'R' + (i + 1);
+
+      // Create rows with row names and binary numeric cells
+      for (let i = 0; i < rows; i++) {
+        const row = document.createElement("tr");
+        const rowTh = document.createElement("th");
+        const rowInput = document.createElement("input");
+        rowInput.type = "text";
+        rowInput.value = "R" + (i + 1);
         rowTh.appendChild(rowInput);
         row.appendChild(rowTh);
-        for (let j = 0; j < size; j++) {
-          const cell = document.createElement('td');
-          const cellInput = document.createElement('input');
-          cellInput.type = 'number';
-          cellInput.value = '0';
+        for (let j = 0; j < cols; j++) {
+          const cell = document.createElement("td");
+          const cellInput = document.createElement("input");
+          cellInput.type = "number";
+          cellInput.min = "0";
+          cellInput.max = "1";
+          cellInput.step = "1";
+          cellInput.value = "0";
+          // Ensure only binary values are entered
+          cellInput.oninput = function () {
+            if (this.value !== "0" && this.value !== "1") {
+              this.value = "0";
+            }
+          };
           cell.appendChild(cellInput);
           row.appendChild(cell);
         }
@@ -167,43 +188,42 @@
       }
       container.appendChild(table);
     }
-    
+
     function performROC() {
-      const size = parseInt(document.getElementById('size').value);
-      const container = document.getElementById('matrixContainer');
-      // Get numeric cells only
-      const inputs = container.querySelectorAll('td input');
+      const rows = parseInt(document.getElementById("rows").value);
+      const cols = parseInt(document.getElementById("cols").value);
+      const container = document.getElementById("matrixContainer");
+      const inputs = container.querySelectorAll("td input");
       let matrix = [];
-      for (let i = 0; i < size; i++) {
+      for (let i = 0; i < rows; i++) {
         let row = [];
-        for (let j = 0; j < size; j++) {
-          row.push(parseInt(inputs[i * size + j].value));
+        for (let j = 0; j < cols; j++) {
+          row.push(parseInt(inputs[i * cols + j].value));
         }
         matrix.push(row);
       }
       const clustered = rankOrderClustering(matrix);
-      displayResult(clustered, 'resultContainer');
+      displayResult(clustered, "resultContainer");
     }
-    
+
     // --- Excel Mode ---
     let excelClusteredMatrix = null;
     let excelClusteredResult = null; // with headers
     function processExcel() {
-      const fileInput = document.getElementById('excelInput');
+      const fileInput = document.getElementById("excelInput");
       if (!fileInput.files.length) {
-        alert('Please select an Excel file.');
+        alert("Please select an Excel file.");
         return;
       }
       const file = fileInput.files[0];
       const reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = function (e) {
         const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
+        const workbook = XLSX.read(data, { type: "array" });
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
         let sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
-        
-        if (document.getElementById('excelHasHeaders').checked) {
+        if (document.getElementById("excelHasHeaders").checked) {
           // Assume first row and first column are headers
           const colHeaders = sheetData[0].slice(1);
           let rowHeaders = [];
@@ -215,24 +235,24 @@
           }
           const result = rankOrderClusteringWithHeaders(matrix, rowHeaders, colHeaders);
           excelClusteredResult = result;
-          displayResultWithHeaders(result, 'excelResult');
+          displayResultWithHeaders(result, "excelResult");
         } else {
           // Entire sheet is numeric matrix
           let matrix = sheetData.map(row => row.map(cell => parseInt(cell)));
           excelClusteredMatrix = rankOrderClustering(matrix);
-          displayResult(excelClusteredMatrix, 'excelResult');
+          displayResult(excelClusteredMatrix, "excelResult");
         }
-        document.getElementById('downloadBtn').style.display = 'block';
+        document.getElementById("downloadBtn").style.display = "block";
       };
       reader.readAsArrayBuffer(file);
     }
-    
+
     function downloadExcel() {
       let wb = XLSX.utils.book_new();
       let ws;
       if (excelClusteredResult && excelClusteredResult.matrix) {
         let data = [];
-        data.push([''].concat(excelClusteredResult.colNames));
+        data.push([""].concat(excelClusteredResult.colNames));
         for (let i = 0; i < excelClusteredResult.matrix.length; i++) {
           data.push([excelClusteredResult.rowNames[i]].concat(excelClusteredResult.matrix[i]));
         }
@@ -244,24 +264,26 @@
         return;
       }
       XLSX.utils.book_append_sheet(wb, ws, "ClusteredMatrix");
-      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([wbout], { type: 'application/octet-stream' });
+      const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([wbout], { type: "application/octet-stream" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = 'clustered_matrix.xlsx';
+      a.download = "clustered_matrix.xlsx";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
     }
-    
+
     // --- Rank Order Clustering Algorithm ---
     function rankOrderClustering(matrix) {
       let mat = matrix.map(row => row.slice());
-      let rowSorted = false, colSorted = false;
+      let rowSorted = false,
+        colSorted = false;
       while (!(rowSorted && colSorted)) {
         rowSorted = colSorted = true;
-        let rowRanks = mat.map(row => parseInt(row.join(''), 2));
+        // Row sorting
+        let rowRanks = mat.map(row => parseInt(row.join(""), 2));
         let sortedRows = mat
           .map((row, idx) => ({ row, rank: rowRanks[idx] }))
           .sort((a, b) => b.rank - a.rank)
@@ -270,8 +292,9 @@
           rowSorted = false;
           mat = sortedRows;
         }
+        // Column sorting
         mat = transpose(mat);
-        let colRanks = mat.map(col => parseInt(col.join(''), 2));
+        let colRanks = mat.map(col => parseInt(col.join(""), 2));
         let sortedCols = mat
           .map((col, idx) => ({ col, rank: colRanks[idx] }))
           .sort((a, b) => b.rank - a.rank)
@@ -284,15 +307,16 @@
       }
       return mat;
     }
-    
+
     function rankOrderClusteringWithHeaders(matrix, rowNames, colNames) {
       let mat = matrix.map(row => row.slice());
       let rNames = rowNames.slice();
       let cNames = colNames.slice();
-      let rowSorted = false, colSorted = false;
+      let rowSorted = false,
+        colSorted = false;
       while (!(rowSorted && colSorted)) {
         rowSorted = colSorted = true;
-        let rowRanks = mat.map(row => parseInt(row.join(''), 2));
+        let rowRanks = mat.map(row => parseInt(row.join(""), 2));
         let rowIndices = rowRanks.map((r, i) => i);
         rowIndices.sort((a, b) => rowRanks[b] - rowRanks[a]);
         if (!rowIndices.every((v, i) => v === i)) {
@@ -301,7 +325,7 @@
           rNames = rowIndices.map(i => rNames[i]);
         }
         let tMat = transpose(mat);
-        let colRanks = tMat.map(col => parseInt(col.join(''), 2));
+        let colRanks = tMat.map(col => parseInt(col.join(""), 2));
         let colIndices = colRanks.map((r, i) => i);
         colIndices.sort((a, b) => colRanks[b] - colRanks[a]);
         if (!colIndices.every((v, i) => v === i)) {
@@ -313,20 +337,20 @@
       }
       return { matrix: mat, rowNames: rNames, colNames: cNames };
     }
-    
+
     function transpose(matrix) {
       return matrix[0].map((_, colIndex) => matrix.map(row => row[colIndex]));
     }
-    
+
     // --- Display Functions ---
     function displayResult(matrix, containerId) {
       const container = document.getElementById(containerId);
-      container.innerHTML = '';
-      const table = document.createElement('table');
+      container.innerHTML = "";
+      const table = document.createElement("table");
       matrix.forEach(row => {
-        const tr = document.createElement('tr');
+        const tr = document.createElement("tr");
         row.forEach(cell => {
-          const td = document.createElement('td');
+          const td = document.createElement("td");
           td.textContent = cell;
           tr.appendChild(td);
         });
@@ -334,27 +358,27 @@
       });
       container.appendChild(table);
     }
-    
+
     function displayResultWithHeaders(result, containerId) {
       const container = document.getElementById(containerId);
-      container.innerHTML = '';
-      const table = document.createElement('table');
-      const headerRow = document.createElement('tr');
-      const emptyTh = document.createElement('th');
+      container.innerHTML = "";
+      const table = document.createElement("table");
+      const headerRow = document.createElement("tr");
+      const emptyTh = document.createElement("th");
       headerRow.appendChild(emptyTh);
       result.colNames.forEach(name => {
-        const th = document.createElement('th');
+        const th = document.createElement("th");
         th.textContent = name;
         headerRow.appendChild(th);
       });
       table.appendChild(headerRow);
       result.matrix.forEach((row, i) => {
-        const tr = document.createElement('tr');
-        const th = document.createElement('th');
+        const tr = document.createElement("tr");
+        const th = document.createElement("th");
         th.textContent = result.rowNames[i];
         tr.appendChild(th);
         row.forEach(cell => {
-          const td = document.createElement('td');
+          const td = document.createElement("td");
           td.textContent = cell;
           tr.appendChild(td);
         });
