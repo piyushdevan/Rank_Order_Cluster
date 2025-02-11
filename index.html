@@ -17,8 +17,7 @@
     h1 {
       font-size: 3em;
       margin-bottom: 20px;
-      color: #0ff;
-      text-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 30px #0ff;
+      color: #fff;
     }
     .container {
       display: flex;
@@ -28,10 +27,10 @@
     }
     .input-section, .output-section {
       width: 45%;
-      background: rgba(0, 0, 0, 0.9);
+      background: rgba(255, 255, 255, 0.1);
       padding: 20px;
       border-radius: 10px;
-      box-shadow: 0 0 15px #0ff;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
     }
     label, input, button {
       font-size: 1.2em;
@@ -40,28 +39,25 @@
       width: 60px;
       padding: 5px;
       margin: 10px 0;
-      border: 2px solid #0ff;
+      border: 2px solid #fff;
       border-radius: 5px;
       text-align: center;
       background: #000;
-      color: #0ff;
-      box-shadow: 0 0 5px #0ff;
+      color: #fff;
     }
     button {
       background-color: #000;
-      color: #0ff;
-      border: 2px solid #0ff;
+      color: #fff;
+      border: 2px solid #fff;
       border-radius: 5px;
       padding: 10px 20px;
       cursor: pointer;
       transition: all 0.3s ease;
       margin-top: 10px;
-      box-shadow: 0 0 10px #0ff;
     }
     button:hover {
-      background-color: #0ff;
+      background-color: #fff;
       color: #000;
-      box-shadow: 0 0 20px #0ff;
     }
     table {
       border-collapse: collapse;
@@ -69,18 +65,23 @@
       margin-top: 20px;
     }
     td, th {
-      border: 1px solid #0ff;
+      border: 1px solid #fff;
       padding: 10px;
       background-color: #000;
       text-align: center;
-      color: #0ff;
-      box-shadow: 0 0 5px #0ff;
+      color: #fff;
     }
     .result h2 {
       font-size: 2em;
-      color: #0ff;
+      color: #fff;
       margin-bottom: 10px;
-      text-shadow: 0 0 10px #0ff;
+    }
+    .input-section table input[type="number"] {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .input-section table {
+      table-layout: fixed;
     }
   </style>
 </head>
@@ -89,7 +90,7 @@
   <div class="container">
     <div class="input-section">
       <label for="size">Enter matrix size (n x n): </label>
-      <input type="number" id="size" min="1" value="3">
+      <input type="number" id="size" min="1" value="5">
       <button onclick="generateMatrix()">Generate Matrix</button>
       <div id="matrixContainer"></div>
       <button onclick="performROC()">Perform ROC</button>
@@ -102,6 +103,8 @@
   </div>
 
   <script>
+    window.onload = generateMatrix;
+
     function generateMatrix() {
       const size = document.getElementById('size').value;
       const container = document.getElementById('matrixContainer');
