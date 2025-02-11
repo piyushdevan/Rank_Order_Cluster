@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rank Order Clustering</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+      color: #333;
+      text-align: center;
+      padding: 40px;
+    }
+    h1 {
+      font-size: 3em;
+      margin-bottom: 10px;
+      color: #2c3e50;
+    }
+    label, input, button {
+      font-size: 1.2em;
+    }
+    input[type="number"] {
+      width: 60px;
+      padding: 5px;
+      margin: 10px;
+      border: 2px solid #2c3e50;
+      border-radius: 5px;
+      text-align: center;
+    }
+    button {
+      background-color: #2c3e50;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin: 10px;
+    }
+    button:hover {
+      background-color: #34495e;
+    }
+    table {
+      border-collapse: collapse;
+      margin: 20px auto;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    td, th {
+      border: 1px solid #2c3e50;
+      padding: 15px;
+      background-color: #ecf0f1;
+    }
+    .result {
+      margin-top: 30px;
+    }
+    .result h2 {
+      font-size: 2em;
+      color: #2c3e50;
+    }
+  </style>
+</head>
+<body>
+  <h1>Rank Order Clustering</h1>
+  <label for="size">Enter matrix size (n x n): </label>
+  <input type="number" id="size" min="1" value="3">
+  <button onclick="generateMatrix()">Generate Matrix</button>
+  
+  <div id="matrixContainer"></div>
+  <button onclick="performROC()">Perform ROC</button>
+
+  <div class="result" id="resultContainer"></div>
+
+  <script>
+    function generateMatrix() {
+      const size = document.getElementById('size').value;
+      const container = document.getElementById('matrixContainer');
+      container.innerHTML = '';
+      const table = document.createElement('table');
+
+      for (let i = 0; i < size; i++) {
+        const row = document.createElement('tr');
+        for (let j = 0; j < size; j++) {
+          const cell = document.createElement('td');
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.value = '0';
+          cell.appendChild(input);
+          row.appendChild(cell);
+        }
+        table.appendChild(row);
+      }
+      container.appendChild(table);
+    }
+
+    function performROC() {
+      const size = document.getElementById('size').value;
+      const matrix = [];
+      const inputs = document.querySelectorAll('input');
+
+      for (let i = 0; i < size; i++) {
+        const row = [];
+        for (let j = 0; j < size; j++) {
+          row.push(parseInt(inputs[i * size + j].value));
+        }
+        matrix.push(row);
+      }
+
+      const result = rankOrderClustering(matrix);
+      displayResult(result);
+    }
+
+    function rankOrderClustering(matrix) {
+      let sorted = false;
+      while (!sorted) {
+        matrix = matrix.map(row => ({
+          data: row,
+          binaryValue: parseInt(row.join(''), 2)
+        })).sort((a, b) => b.binaryValue - a.binaryValue).map(item => item.data);
+
+        matrix = transpose(matrix);
+
+        matrix = matrix.map(col => ({
+          data: col,
+          binaryValue: parseInt(col.join(''), 2)
+        })).sort((a, b) => b.binaryValue - a.binaryValue).map(item => item.data);
+
+        matrix = transpose(matrix);
+
+        sorted = true;
+      }
+      return matrix;
+    }
+
+    function transpose(matrix) {
+      return matrix[0].map((_, colIndex) => matrix.map(row => row[colIndex]));
+    }
+
+    function displayResult(matrix) {
+      const container = document.getElementById('resultContainer');
+      container.innerHTML = '<h2>Clustered Matrix:</h2>';
+      const table = document.createElement('table');
+
+      matrix.forEach(row => {
+        const tr = document.createElement('tr');
+        row.forEach(cell => {
+          const td = document.createElement('td');
+          td.textContent = cell;
+          tr.appendChild(td);
+        });
+        table.appendChild(tr);
+      });
+
+      container.appendChild(table);
+    }
+  </script>
+</body>
+</html>
