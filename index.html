@@ -11,42 +11,53 @@
       font-family: 'Segoe UI', Arial, sans-serif;
       background: #f7f7f7;
       margin: 0;
-      padding: 0;
+      padding: 20px;
+      text-align: center;
       color: #333;
     }
     header {
       background: #4CAF50;
       color: white;
       padding: 20px;
-      text-align: center;
+      margin-bottom: 20px;
     }
-    main {
-      max-width: 1000px;
-      margin: 20px auto;
-      padding: 20px;
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
       background: white;
+      padding: 20px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     section {
-      margin-bottom: 40px;
+      margin: 20px 0;
     }
     h1, h2, h3 {
-      margin-top: 0;
-      text-align: center;
+      margin: 0 0 10px;
     }
-    label, input, button {
+    label {
       display: block;
-      width: 100%;
       margin: 10px 0;
-      box-sizing: border-box;
     }
-    input[type="number"], input[type="text"], input[type="file"] {
+    .inline-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    input[type="number"],
+    input[type="text"],
+    input[type="file"] {
+      width: 100%;
+      max-width: 400px;
       padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      margin: 5px auto;
+      box-sizing: border-box;
+      text-align: center;
     }
     button {
       padding: 10px;
+      margin: 10px auto;
+      width: 100%;
+      max-width: 400px;
       background: #4CAF50;
       color: white;
       border: none;
@@ -58,28 +69,19 @@
     }
     table {
       width: 100%;
+      max-width: 600px;
+      margin: 10px auto;
       border-collapse: collapse;
-      margin: 10px 0;
       table-layout: fixed;
     }
     th, td {
       border: 1px solid #ddd;
       padding: 8px;
-      text-align: center;
       word-wrap: break-word;
+      text-align: center;
     }
     th {
       background: #f2f2f2;
-    }
-    @media (min-width: 600px) {
-      label, input, button {
-        max-width: 400px;
-        margin-left: auto;
-        margin-right: auto;
-      }
-      table {
-        max-width: 600px;
-      }
     }
   </style>
 </head>
@@ -87,8 +89,23 @@
   <header>
     <h1>Rank Order Clustering</h1>
   </header>
-  <main>
-    <!-- Manual Matrix Entry -->
+  <div class="container">
+    <!-- Excel File Input Section (placed at top) -->
+    <section id="excelSection">
+      <h2>Excel File Input</h2>
+      <input type="file" id="excelInput" accept=".xlsx, .xls">
+      <div class="inline-label">
+        <input type="checkbox" id="excelHasHeaders">
+        <label for="excelHasHeaders" style="margin: 0;">Excel file contains headers</label>
+      </div>
+      <button onclick="processExcel()">Process Excel File</button>
+      <div id="excelResult">
+        <h3>Clustered Matrix (Excel):</h3>
+      </div>
+      <button id="downloadBtn" onclick="downloadExcel()" style="display:none;">Download Clustered Matrix as Excel</button>
+    </section>
+    
+    <!-- Manual Matrix Entry Section -->
     <section id="manualSection">
       <h2>Manual Matrix Entry</h2>
       <label for="size">Matrix Size (n x n):</label>
@@ -103,22 +120,7 @@
       <h2>Clustered Matrix (Manual):</h2>
       <div id="resultContainer"></div>
     </section>
-    
-    <!-- Excel File Input -->
-    <section id="excelSection">
-      <h2>Excel File Input</h2>
-      <label>
-        <input type="checkbox" id="excelHasHeaders">
-        Excel file contains headers (Row & Column Names)
-      </label>
-      <input type="file" id="excelInput" accept=".xlsx, .xls">
-      <button onclick="processExcel()">Process Excel File</button>
-      <div id="excelResult">
-        <h3>Clustered Matrix (Excel):</h3>
-      </div>
-      <button id="downloadBtn" onclick="downloadExcel()" style="display:none;">Download Clustered Matrix as Excel</button>
-    </section>
-  </main>
+  </div>
   
   <script>
     // --- Manual Mode ---
@@ -185,8 +187,7 @@
     
     // --- Excel Mode ---
     let excelClusteredMatrix = null;
-    let excelClusteredResult = null; // for result with headers
-    
+    let excelClusteredResult = null; // with headers
     function processExcel() {
       const fileInput = document.getElementById('excelInput');
       if (!fileInput.files.length) {
@@ -203,7 +204,7 @@
         let sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
         
         if (document.getElementById('excelHasHeaders').checked) {
-          // First row and first column are headers
+          // Assume first row and first column are headers
           const colHeaders = sheetData[0].slice(1);
           let rowHeaders = [];
           let matrix = [];
@@ -230,7 +231,6 @@
       let wb = XLSX.utils.book_new();
       let ws;
       if (excelClusteredResult && excelClusteredResult.matrix) {
-        // Prepare data with headers
         let data = [];
         data.push([''].concat(excelClusteredResult.colNames));
         for (let i = 0; i < excelClusteredResult.matrix.length; i++) {
@@ -255,13 +255,12 @@
       document.body.removeChild(a);
     }
     
-    // --- Rank Order Clustering Algorithm (Numeric Only) ---
+    // --- Rank Order Clustering Algorithm ---
     function rankOrderClustering(matrix) {
       let mat = matrix.map(row => row.slice());
       let rowSorted = false, colSorted = false;
       while (!(rowSorted && colSorted)) {
         rowSorted = colSorted = true;
-        // Row sorting
         let rowRanks = mat.map(row => parseInt(row.join(''), 2));
         let sortedRows = mat
           .map((row, idx) => ({ row, rank: rowRanks[idx] }))
@@ -271,7 +270,6 @@
           rowSorted = false;
           mat = sortedRows;
         }
-        // Column sorting
         mat = transpose(mat);
         let colRanks = mat.map(col => parseInt(col.join(''), 2));
         let sortedCols = mat
@@ -287,7 +285,6 @@
       return mat;
     }
     
-    // --- Rank Order Clustering with Headers ---
     function rankOrderClusteringWithHeaders(matrix, rowNames, colNames) {
       let mat = matrix.map(row => row.slice());
       let rNames = rowNames.slice();
@@ -295,7 +292,6 @@
       let rowSorted = false, colSorted = false;
       while (!(rowSorted && colSorted)) {
         rowSorted = colSorted = true;
-        // Sort rows along with row headers
         let rowRanks = mat.map(row => parseInt(row.join(''), 2));
         let rowIndices = rowRanks.map((r, i) => i);
         rowIndices.sort((a, b) => rowRanks[b] - rowRanks[a]);
@@ -304,7 +300,6 @@
           mat = rowIndices.map(i => mat[i]);
           rNames = rowIndices.map(i => rNames[i]);
         }
-        // Sort columns along with column headers
         let tMat = transpose(mat);
         let colRanks = tMat.map(col => parseInt(col.join(''), 2));
         let colIndices = colRanks.map((r, i) => i);
@@ -344,7 +339,6 @@
       const container = document.getElementById(containerId);
       container.innerHTML = '';
       const table = document.createElement('table');
-      // Header row
       const headerRow = document.createElement('tr');
       const emptyTh = document.createElement('th');
       headerRow.appendChild(emptyTh);
@@ -354,7 +348,6 @@
         headerRow.appendChild(th);
       });
       table.appendChild(headerRow);
-      // Data rows with row headers
       result.matrix.forEach((row, i) => {
         const tr = document.createElement('tr');
         const th = document.createElement('th');
