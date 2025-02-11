@@ -7,57 +7,85 @@
   <!-- SheetJS library for Excel processing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    body {
+    /* Full-width, full-viewport layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100vh;
       font-family: 'Segoe UI', Arial, sans-serif;
       background: #f7f7f7;
-      margin: 0;
-      padding: 20px;
-      text-align: center;
       color: #333;
+      box-sizing: border-box;
+    }
+    *, *:before, *:after {
+      box-sizing: inherit;
     }
     header {
       background: #4CAF50;
       color: white;
       padding: 20px;
-      margin-bottom: 20px;
+      text-align: center;
     }
     .container {
-      max-width: 800px;
-      margin: 0 auto;
+      width: 100%;
+      padding: 10px;
+    }
+    /* Top row: Excel Input (left) and Manual Entry (right) side by side */
+    .top-row {
+      display: flex;
+      flex-wrap: wrap;
+      width: 100%;
+      gap: 10px;
+      justify-content: space-around;
+    }
+    .excel-container,
+    .manual-container {
+      flex: 1;
+      min-width: 280px;
+      padding: 10px;
       background: white;
-      padding: 20px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    section {
-      margin: 20px 0;
+    .excel-container h2,
+    .manual-container h2,
+    .row-heading {
+      text-align: center;
+      margin-top: 0;
     }
-    h1, h2, h3 {
-      margin: 0 0 10px;
+    /* Separate rows for the generated manual matrix and for the result */
+    .manual-matrix-row,
+    .result-row {
+      width: 100%;
+      padding: 10px;
+      background: white;
+      margin: 10px 0;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      overflow-x: auto;
+      display: none; /* Hidden initially */
     }
     label {
       display: block;
       margin: 10px 0;
-    }
-    .inline-label {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
+      text-align: center;
     }
     input[type="number"],
     input[type="text"],
     input[type="file"] {
-      width: 100%;
+      width: 90%;
       max-width: 400px;
       padding: 8px;
-      margin: 5px auto;
-      box-sizing: border-box;
+      margin: 10px auto;
+      display: block;
       text-align: center;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
     button {
+      width: 90%;
       padding: 10px;
       margin: 10px auto;
-      width: 100%;
-      max-width: 400px;
+      display: block;
       background: #4CAF50;
       color: white;
       border: none;
@@ -67,18 +95,18 @@
     button:hover {
       background: #45a049;
     }
+    /* Table styles */
     table {
       width: 100%;
-      max-width: 600px;
-      margin: 10px auto;
       border-collapse: collapse;
       table-layout: fixed;
+      margin: 10px auto;
     }
     th, td {
       border: 1px solid #ddd;
       padding: 8px;
-      word-wrap: break-word;
       text-align: center;
+      word-wrap: break-word;
     }
     th {
       background: #f2f2f2;
@@ -99,52 +127,53 @@
     <h1>Rank Order Clustering</h1>
   </header>
   <div class="container">
-    <!-- Excel File Input Section (at the top) -->
-    <section id="excelSection">
-      <h2>Excel File Input</h2>
-      <input type="file" id="excelInput" accept=".xlsx, .xls" />
-      <div class="inline-label">
-        <input type="checkbox" id="excelHasHeaders" />
-        <label for="excelHasHeaders" style="margin: 0;">Excel file contains headers</label>
+    <!-- Top Row: Excel and Manual Entry Controls -->
+    <div class="top-row">
+      <!-- Excel Input Section -->
+      <div class="excel-container">
+        <h2>Excel Input</h2>
+        <input type="file" id="excelInput" accept=".xlsx, .xls" />
+        <div style="display: flex; align-items: center; justify-content: center; gap: 5px;">
+          <input type="checkbox" id="excelHasHeaders" />
+          <label for="excelHasHeaders" style="margin: 0;">File contains headers</label>
+        </div>
+        <button onclick="processExcel()">Process Excel File</button>
       </div>
-      <button onclick="processExcel()">Process Excel File</button>
-      <div id="excelResult">
-        <h3>Clustered Matrix (Excel):</h3>
+      <!-- Manual Entry Controls Section -->
+      <div class="manual-container">
+        <h2>Manual Entry Controls</h2>
+        <label for="rows">Number of Rows:</label>
+        <input type="number" id="rows" min="1" value="5" />
+        <label for="cols">Number of Columns:</label>
+        <input type="number" id="cols" min="1" value="5" />
+        <button onclick="generateMatrix()">Generate Matrix</button>
+        <button onclick="performROC()">Perform ROC</button>
       </div>
-      <button id="downloadBtn" onclick="downloadExcel()" style="display: none;">Download Clustered Matrix as Excel</button>
-    </section>
-
-    <!-- Manual Matrix Entry Section -->
-    <section id="manualSection">
-      <h2>Manual Matrix Entry</h2>
-      <label for="rows">Number of Rows:</label>
-      <input type="number" id="rows" min="1" value="5" />
-      <label for="cols">Number of Columns:</label>
-      <input type="number" id="cols" min="1" value="5" />
-      <button onclick="generateMatrix()">Generate Matrix</button>
-      <div id="matrixContainer"></div>
-      <button onclick="performROC()">Perform ROC</button>
-    </section>
-
-    <!-- Manual Result Display -->
-    <section id="manualResultSection">
-      <h2>Clustered Matrix (Manual):</h2>
+    </div>
+    <!-- Second Row: Manual Matrix Entry (grid) -->
+    <div class="manual-matrix-row" id="manualMatrixRow">
+      <h2 class="row-heading">Manual Matrix Entry</h2>
+      <div id="manualMatrixContainer"></div>
+    </div>
+    <!-- Third Row: Clustered Matrix Result -->
+    <div class="result-row" id="resultRow">
+      <h2 class="row-heading">Clustered Matrix</h2>
       <div id="resultContainer"></div>
-    </section>
+      <button id="downloadBtn" onclick="downloadExcel()" style="display: none;">Download Result as Excel</button>
+    </div>
   </div>
 
   <script>
     // --- Manual Mode ---
-    window.onload = generateMatrix;
-
+    // Generate the matrix grid and reveal the Manual Matrix Entry row.
     function generateMatrix() {
       const rows = parseInt(document.getElementById("rows").value);
       const cols = parseInt(document.getElementById("cols").value);
-      const container = document.getElementById("matrixContainer");
-      container.innerHTML = "";
+      const container = document.getElementById("manualMatrixContainer");
+      container.innerHTML = ""; // Clear previous grid.
       const table = document.createElement("table");
-
-      // Create header row for column names
+      
+      // Create header row for column names.
       const headerRow = document.createElement("tr");
       const emptyTh = document.createElement("th");
       headerRow.appendChild(emptyTh);
@@ -157,8 +186,8 @@
         headerRow.appendChild(th);
       }
       table.appendChild(headerRow);
-
-      // Create rows with row names and binary numeric cells
+      
+      // Create rows with row names and binary input cells.
       for (let i = 0; i < rows; i++) {
         const row = document.createElement("tr");
         const rowTh = document.createElement("th");
@@ -175,8 +204,8 @@
           cellInput.max = "1";
           cellInput.step = "1";
           cellInput.value = "0";
-          // Ensure only binary values are entered
-          cellInput.oninput = function () {
+          // Force binary entry (only 0 or 1)
+          cellInput.oninput = function() {
             if (this.value !== "0" && this.value !== "1") {
               this.value = "0";
             }
@@ -187,12 +216,15 @@
         table.appendChild(row);
       }
       container.appendChild(table);
+      // Reveal the Manual Matrix Entry row.
+      document.getElementById("manualMatrixRow").style.display = "block";
     }
-
+    
+    // Process the grid values from the manual matrix and display the clustered result.
     function performROC() {
       const rows = parseInt(document.getElementById("rows").value);
       const cols = parseInt(document.getElementById("cols").value);
-      const container = document.getElementById("matrixContainer");
+      const container = document.getElementById("manualMatrixContainer");
       const inputs = container.querySelectorAll("td input");
       let matrix = [];
       for (let i = 0; i < rows; i++) {
@@ -204,8 +236,10 @@
       }
       const clustered = rankOrderClustering(matrix);
       displayResult(clustered, "resultContainer");
+      // Reveal the result row.
+      document.getElementById("resultRow").style.display = "block";
     }
-
+    
     // --- Excel Mode ---
     let excelClusteredMatrix = null;
     let excelClusteredResult = null; // with headers
@@ -217,14 +251,14 @@
       }
       const file = fileInput.files[0];
       const reader = new FileReader();
-      reader.onload = function (e) {
+      reader.onload = function(e) {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: "array" });
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
         let sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
         if (document.getElementById("excelHasHeaders").checked) {
-          // Assume first row and first column are headers
+          // Assume first row and first column are headers.
           const colHeaders = sheetData[0].slice(1);
           let rowHeaders = [];
           let matrix = [];
@@ -235,18 +269,20 @@
           }
           const result = rankOrderClusteringWithHeaders(matrix, rowHeaders, colHeaders);
           excelClusteredResult = result;
-          displayResultWithHeaders(result, "excelResult");
+          displayResultWithHeaders(result, "resultContainer");
         } else {
-          // Entire sheet is numeric matrix
+          // Entire sheet is a numeric matrix.
           let matrix = sheetData.map(row => row.map(cell => parseInt(cell)));
           excelClusteredMatrix = rankOrderClustering(matrix);
-          displayResult(excelClusteredMatrix, "excelResult");
+          displayResult(excelClusteredMatrix, "resultContainer");
         }
+        // Reveal the result row and show the download button.
+        document.getElementById("resultRow").style.display = "block";
         document.getElementById("downloadBtn").style.display = "block";
       };
       reader.readAsArrayBuffer(file);
     }
-
+    
     function downloadExcel() {
       let wb = XLSX.utils.book_new();
       let ws;
@@ -274,15 +310,13 @@
       a.click();
       document.body.removeChild(a);
     }
-
+    
     // --- Rank Order Clustering Algorithm ---
     function rankOrderClustering(matrix) {
       let mat = matrix.map(row => row.slice());
-      let rowSorted = false,
-        colSorted = false;
+      let rowSorted = false, colSorted = false;
       while (!(rowSorted && colSorted)) {
         rowSorted = colSorted = true;
-        // Row sorting
         let rowRanks = mat.map(row => parseInt(row.join(""), 2));
         let sortedRows = mat
           .map((row, idx) => ({ row, rank: rowRanks[idx] }))
@@ -292,7 +326,6 @@
           rowSorted = false;
           mat = sortedRows;
         }
-        // Column sorting
         mat = transpose(mat);
         let colRanks = mat.map(col => parseInt(col.join(""), 2));
         let sortedCols = mat
@@ -307,13 +340,12 @@
       }
       return mat;
     }
-
+    
     function rankOrderClusteringWithHeaders(matrix, rowNames, colNames) {
       let mat = matrix.map(row => row.slice());
       let rNames = rowNames.slice();
       let cNames = colNames.slice();
-      let rowSorted = false,
-        colSorted = false;
+      let rowSorted = false, colSorted = false;
       while (!(rowSorted && colSorted)) {
         rowSorted = colSorted = true;
         let rowRanks = mat.map(row => parseInt(row.join(""), 2));
@@ -337,11 +369,11 @@
       }
       return { matrix: mat, rowNames: rNames, colNames: cNames };
     }
-
+    
     function transpose(matrix) {
       return matrix[0].map((_, colIndex) => matrix.map(row => row[colIndex]));
     }
-
+    
     // --- Display Functions ---
     function displayResult(matrix, containerId) {
       const container = document.getElementById(containerId);
@@ -358,7 +390,7 @@
       });
       container.appendChild(table);
     }
-
+    
     function displayResultWithHeaders(result, containerId) {
       const container = document.getElementById(containerId);
       container.innerHTML = "";
