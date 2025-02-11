@@ -7,15 +7,31 @@
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
-      color: #333;
-      text-align: center;
+      background: #000;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       padding: 40px;
     }
     h1 {
       font-size: 3em;
-      margin-bottom: 10px;
-      color: #2c3e50;
+      margin-bottom: 20px;
+      color: #0ff;
+      text-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 30px #0ff;
+    }
+    .container {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 1000px;
+    }
+    .input-section, .output-section {
+      width: 45%;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px #0ff;
     }
     label, input, button {
       font-size: 1.2em;
@@ -23,53 +39,67 @@
     input[type="number"] {
       width: 60px;
       padding: 5px;
-      margin: 10px;
-      border: 2px solid #2c3e50;
+      margin: 10px 0;
+      border: 2px solid #0ff;
       border-radius: 5px;
       text-align: center;
+      background: #000;
+      color: #0ff;
+      box-shadow: 0 0 5px #0ff;
     }
     button {
-      background-color: #2c3e50;
-      color: #fff;
-      border: none;
+      background-color: #000;
+      color: #0ff;
+      border: 2px solid #0ff;
       border-radius: 5px;
       padding: 10px 20px;
       cursor: pointer;
-      transition: background-color 0.3s ease;
-      margin: 10px;
+      transition: all 0.3s ease;
+      margin-top: 10px;
+      box-shadow: 0 0 10px #0ff;
     }
     button:hover {
-      background-color: #34495e;
+      background-color: #0ff;
+      color: #000;
+      box-shadow: 0 0 20px #0ff;
     }
     table {
       border-collapse: collapse;
-      margin: 20px auto;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      margin-top: 20px;
     }
     td, th {
-      border: 1px solid #2c3e50;
-      padding: 15px;
-      background-color: #ecf0f1;
-    }
-    .result {
-      margin-top: 30px;
+      border: 1px solid #0ff;
+      padding: 10px;
+      background-color: #000;
+      text-align: center;
+      color: #0ff;
+      box-shadow: 0 0 5px #0ff;
     }
     .result h2 {
       font-size: 2em;
-      color: #2c3e50;
+      color: #0ff;
+      margin-bottom: 10px;
+      text-shadow: 0 0 10px #0ff;
     }
   </style>
 </head>
 <body>
   <h1>Rank Order Clustering</h1>
-  <label for="size">Enter matrix size (n x n): </label>
-  <input type="number" id="size" min="1" value="3">
-  <button onclick="generateMatrix()">Generate Matrix</button>
-  
-  <div id="matrixContainer"></div>
-  <button onclick="performROC()">Perform ROC</button>
-
-  <div class="result" id="resultContainer"></div>
+  <div class="container">
+    <div class="input-section">
+      <label for="size">Enter matrix size (n x n): </label>
+      <input type="number" id="size" min="1" value="3">
+      <button onclick="generateMatrix()">Generate Matrix</button>
+      <div id="matrixContainer"></div>
+      <button onclick="performROC()">Perform ROC</button>
+    </div>
+    <div class="output-section">
+      <div class="result" id="resultContainer">
+        <h2>Clustered Matrix:</h2>
+      </div>
+    </div>
+  </div>
 
   <script>
     function generateMatrix() {
@@ -96,7 +126,7 @@
     function performROC() {
       const size = document.getElementById('size').value;
       const matrix = [];
-      const inputs = document.querySelectorAll('input');
+      const inputs = document.querySelectorAll('#matrixContainer input');
 
       for (let i = 0; i < size; i++) {
         const row = [];
@@ -111,23 +141,34 @@
     }
 
     function rankOrderClustering(matrix) {
-      let sorted = false;
-      while (!sorted) {
-        matrix = matrix.map(row => ({
-          data: row,
-          binaryValue: parseInt(row.join(''), 2)
-        })).sort((a, b) => b.binaryValue - a.binaryValue).map(item => item.data);
+      let rowSorted = false, colSorted = false;
+
+      while (!(rowSorted && colSorted)) {
+        rowSorted = colSorted = true;
+
+        const rowRanks = matrix.map(row => parseInt(row.join(''), 2));
+        const sortedRows = matrix.map((row, idx) => ({ row, rank: rowRanks[idx] }))
+                                .sort((a, b) => b.rank - a.rank)
+                                .map(item => item.row);
+
+        if (JSON.stringify(matrix) !== JSON.stringify(sortedRows)) {
+          rowSorted = false;
+          matrix = sortedRows;
+        }
 
         matrix = transpose(matrix);
 
-        matrix = matrix.map(col => ({
-          data: col,
-          binaryValue: parseInt(col.join(''), 2)
-        })).sort((a, b) => b.binaryValue - a.binaryValue).map(item => item.data);
+        const colRanks = matrix.map(col => parseInt(col.join(''), 2));
+        const sortedCols = matrix.map((col, idx) => ({ col, rank: colRanks[idx] }))
+                                .sort((a, b) => b.rank - a.rank)
+                                .map(item => item.col);
+
+        if (JSON.stringify(matrix) !== JSON.stringify(sortedCols)) {
+          colSorted = false;
+          matrix = sortedCols;
+        }
 
         matrix = transpose(matrix);
-
-        sorted = true;
       }
       return matrix;
     }
