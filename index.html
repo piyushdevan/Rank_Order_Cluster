@@ -102,17 +102,21 @@
     <h1>Rank Order Clustering</h1>
   </header>
   <div class="container">
-    <!-- Top Row: Excel Input & Manual Entry Controls -->
+    <!-- Top Row: Excel Control & Manual Entry Controls -->
     <div class="top-row">
+      <!-- Excel Control Section -->
       <div class="excel-container">
-        <h2>Excel Input</h2>
+        <h2>Excel Control</h2>
         <input type="file" id="excelInput" accept=".xlsx, .xls" />
         <div style="display: flex; align-items: center; justify-content: center; gap: 5px;">
           <input type="checkbox" id="excelHasHeaders" />
           <label for="excelHasHeaders" style="margin: 0;">File contains headers</label>
         </div>
         <button onclick="processExcel()">Process Excel File</button>
+        <!-- Download button now appears here -->
+        <button id="downloadBtn" onclick="downloadExcel()" style="display: none;">Download Result as Excel</button>
       </div>
+      <!-- Manual Entry Controls Section -->
       <div class="manual-container">
         <h2>Manual Entry Controls</h2>
         <label for="rows">Number of Rows:</label>
@@ -132,7 +136,6 @@
     <div class="result-row" id="resultRow">
       <h2 class="row-heading">Clustered Matrix</h2>
       <div id="resultContainer"></div>
-      <button id="downloadBtn" onclick="downloadExcel()" style="display: none;">Download Result as Excel</button>
     </div>
   </div>
 
@@ -188,7 +191,7 @@
       document.getElementById("manualMatrixRow").style.display = "block";
     }
     
-    // Process manual matrix and perform clustering, preserving header reordering
+    // Process the manual matrix and perform clustering (with header reordering)
     function performManualROC() {
       const rows = parseInt(document.getElementById("rows").value);
       const cols = parseInt(document.getElementById("cols").value);
@@ -199,11 +202,9 @@
       }
       let colHeaders = [];
       table.querySelectorAll("tr:first-child th input").forEach((inp, i) => {
-        if(i > 0) {
           let headerVal = inp.value.trim();
-          if (!headerVal) headerVal = "C" + i;
+          if (!headerVal) headerVal = "C" + (i + 1);
           colHeaders.push(headerVal);
-        }
       });
       let rowHeaders = [];
       let matrix = [];
@@ -224,7 +225,7 @@
       document.getElementById("resultRow").style.display = "block";
     }
     
-    // Excel Mode remains similar
+    // Excel Mode
     let excelClusteredMatrix = null, excelClusteredResult = null;
     function processExcel() {
       const fileInput = document.getElementById("excelInput");
@@ -273,7 +274,8 @@
       } else if (excelClusteredMatrix) {
         ws = XLSX.utils.aoa_to_sheet(excelClusteredMatrix);
       } else {
-        alert("No data to download."); return;
+        alert("No data to download.");
+        return;
       }
       XLSX.utils.book_append_sheet(wb, ws, "ClusteredMatrix");
       const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
@@ -287,7 +289,7 @@
       document.body.removeChild(a);
     }
     
-    // Bubble-sort–style clustering with header reordering (mimicking VBA logic)
+    // Bubble-sort–style clustering with header reordering (VBA-like logic)
     function rankOrderClusteringWithHeaders(matrix, rowNames, colNames) {
       let mat = matrix.map(r => r.slice());
       let rNames = rowNames.slice();
@@ -334,7 +336,7 @@
       return { matrix: mat, rowNames: rNames, colNames: cNames };
     }
     
-    // Numeric-only clustering (for Excel without headers)
+    // Numeric-only clustering for Excel without headers.
     function rankOrderClustering(matrix) {
       let mat = matrix.map(r => r.slice());
       let rowSorted = false, colSorted = false;
